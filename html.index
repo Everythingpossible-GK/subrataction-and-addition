@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbo Math Grand Prix - 4th Grade Simulator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap');
+        
+        .font-dashboard {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .font-ui {
+            font-family: 'Rajdhani', sans-serif;
+        }
+        /* Dashboard glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* LED Glow effects */
+        .glow-green {
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.4);
+        }
+        .glow-blue {
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+        .glow-red {
+            box-shadow: 0 0 15px rgba(248, 113, 113, 0.4);
+        }
+        /* Custom animated road lines */
+        @keyframes roadScroll {
+            0% { background-position-y: 0px; }
+            100% { background-position-y: 400px; }
+        }
+        .scrolling-road {
+            background-image: linear-gradient(to bottom, transparent 50%, #1e293b 50%), 
+                              linear-gradient(to right, transparent 49%, #facc15 49%, #facc15 51%, transparent 51%);
+            background-size: 100% 40px, 100% 100%;
+            animation: roadScroll 1s linear infinite;
+        }
+        .road-paused {
+            animation-play-state: paused;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-ui min-h-screen overflow-x-hidden selection:bg-amber-500 selection:text-slate-950">
+
+    <!-- Header Navigation Dashboard -->
+    <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <!-- SVG Animated Logo Car -->
+                <div class="w-12 h-12 bg-amber-500 rounded-lg flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/20 transform hover:scale-105 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-8 h-8 animate-pulse">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        <path d="M19 12h2m-2 2h2m-16-2H3m2 2H3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-wider font-dashboard text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-red-500">
+                        TURBO MATH GRAND PRIX
+                    </h1>
+                    <p class="text-xs text-slate-400 font-dashboard uppercase tracking-widest">4th Grade Addition & Subtraction Academy</p>
+                </div>
+            </div>
+
+            <!-- Dashboard Control Center -->
+            <div class="flex items-center gap-4">
+                <!-- Audio Controls -->
+                <button id="soundToggle" onclick="toggleMute()" class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 transition rounded-lg border border-slate-700 text-sm">
+                    <span id="audioIcon">🔊</span>
+                    <span class="font-dashboard text-xs uppercase hidden sm:inline" id="audioStatus">Sound On</span>
+                </button>
+                
+                <!-- Score Counter -->
+                <div class="flex items-center gap-2 bg-slate-950 px-4 py-1.5 rounded-full border border-amber-500/30">
+                    <span class="text-amber-400 font-bold text-lg">⭐</span>
+                    <div class="text-right">
+                        <div class="text-xs text-slate-400 font-dashboard leading-none">SCORE</div>
+                        <div id="playerScore" class="font-dashboard font-bold text-emerald-400 text-sm">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Academy Mode Selector Tabs -->
+    <nav class="max-w-4xl mx-auto px-4 mt-6 grid grid-cols-3 gap-2 sm:gap-4">
+        <button onclick="switchTab('playground')" id="btn-tab-playground" class="tab-button flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-300 bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-lg shadow-amber-500/10">
+            <span class="text-2xl sm:text-3xl">🚦</span>
+            <span class="text-xs sm:text-sm font-dashboard mt-1 uppercase tracking-wide">Pit Stop Parking</span>
+            <span class="text-[10px] opacity-75 hidden sm:inline font-dashboard">Visual Garage Math</span>
+        </button>
+        <button onclick="switchTab('workbench')" id="btn-tab-workbench" class="tab-button flex flex-col items-center justify-center p-3 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition-all duration-300">
+            <span class="text-2xl sm:text-3xl">⚙️</span>
+            <span class="text-xs sm:text-sm font-dashboard mt-1 uppercase tracking-wide">Odometer Math</span>
+            <span class="text-[10px] opacity-60 hidden sm:inline font-dashboard">Step-by-Step Regrouping</span>
+        </button>
+        <button onclick="switchTab('duel')" id="btn-tab-duel" class="tab-button flex flex-col items-center justify-center p-3 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition-all duration-300">
+            <span class="text-2xl sm:text-3xl">🏁</span>
+            <span class="text-xs sm:text-sm font-dashboard mt-1 uppercase tracking-wide">Speedway Duel</span>
+            <span class="text-[10px] opacity-60 hidden sm:inline font-dashboard">Race Track Adventure</span>
+        </button>
+    </nav>
+
+    <!-- Main Content Panels -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        
+        <!-- 🚦 TAB 1: PIT STOP PLAYGROUND -->
+        <section id="tab-playground" class="tab-content block space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Garage Visualizer -->
+                <div class="lg:col-span-8 glass-panel rounded-2xl p-6 border border-slate-800 relative overflow-hidden flex flex-col justify-between min-h-[480px]">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                        <svg class="w-64 h-64 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4H5a3 3 0 00-3 3v10a3 3 0 003 3h14a3 3 0 003-3V7a3 3 0 00-3-3zm1 13a1 1 0 01-1 1H5a1 1 0 01-1-1V9h16v8z"/></svg>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold font-dashboard flex items-center gap-2 text-amber-400">
+                                <span>🏎️</span> RACING PIT STOP GARAGE
+                            </h2>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-ping"></span>
+                                <span class="text-xs font-dashboard text-emerald-400 uppercase tracking-widest">Active Sim</span>
+                            </div>
+                        </div>
+                        
+                        <p class="text-slate-300 text-sm mb-6 max-w-2xl leading-relaxed">
+                            Welcome to the Formula Math Garage! Choose an operation, then click the bays to drive cars in or out. Complete the challenges to win racing trophies!
+                        </p>
+
+                        <!-- Math Garage Slots Grid -->
+                        <div class="bg-slate-950 p-6 rounded-xl border border-slate-800/80 mb-6">
+                            <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4" id="garageGrid">
+                                <!-- Dynamic Spots populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Formula Dashboard Display -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div class="text-center sm:text-left">
+                            <span class="text-xs text-slate-400 font-dashboard uppercase tracking-wider block">Live Formula Tracker</span>
+                            <div class="flex items-center gap-3 mt-1 font-dashboard text-2xl" id="interactiveFormula">
+                                <span class="text-sky-400" id="formulaInitial">0</span>
+                                <span class="text-amber-400" id="formulaOperator">+</span>
+                                <span class="text-emerald-400" id="formulaOperand">0</span>
+                                <span class="text-slate-400">=</span>
+                                <span class="text-amber-400 font-extrabold bg-slate-950 px-3 py-1 rounded border border-amber-500/20 shadow-inner" id="formulaResult">0</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Manual Inputs -->
+                        <div class="flex flex-wrap gap-2 justify-center">
+                            <button onclick="garageAddCar()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition rounded-lg text-sm font-dashboard font-bold uppercase tracking-wide flex items-center gap-1 glow-green">
+                                <span class="text-lg">+</span> Drive Car In
+                            </button>
+                            <button onclick="garageRemoveCar()" class="px-4 py-2 bg-red-600 hover:bg-red-500 active:scale-95 transition rounded-lg text-sm font-dashboard font-bold uppercase tracking-wide flex items-center gap-1 glow-red">
+                                <span class="text-lg">-</span> Drive Car Out
+                            </button>
+                            <button onclick="resetGarage()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 transition rounded-lg text-sm font-dashboard text-slate-300">
+                                Clear Bays
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Side Quests / Challenges (Aligns with 4th Grade Pedagogy) -->
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                    <div class="glass-panel rounded-2xl p-6 border border-slate-800 flex-1">
+                        <h3 class="text-lg font-bold font-dashboard text-amber-400 mb-4 flex items-center gap-2">
+                            🏆 GARAGE MISSIONS
+                        </h3>
+                        <div class="space-y-4">
+                            <!-- Challenge Box -->
+                            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800/80">
+                                <div class="flex justify-between items-start">
+                                    <span class="text-xs font-dashboard text-slate-400 uppercase tracking-wider block mb-1">Target Mission</span>
+                                    <span class="text-[10px] font-dashboard bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 uppercase">LVL 1</span>
+                                </div>
+                                <h4 class="font-bold text-slate-100 text-base" id="challengeDescription">
+                                    We have 8 rally cars ready in our bays. Drive 5 sports cars in to join them. How many cars will be in the garage?
+                                </h4>
+                                
+                                <div class="mt-4 flex flex-col gap-2">
+                                    <!-- Interactive inputs for solver -->
+                                    <div class="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-lg border border-slate-800">
+                                        <span class="font-dashboard text-slate-400 text-sm">YOUR EQUATION:</span>
+                                        <div class="flex items-center gap-1 text-sm font-dashboard ml-auto">
+                                            <input type="number" id="chalNum1" class="w-12 bg-slate-950 border border-slate-700 text-center rounded py-1 text-amber-400" placeholder="0">
+                                            <select id="chalOp" class="bg-slate-950 border border-slate-700 text-center rounded py-1 px-1 text-slate-300">
+                                                <option value="+">+</option>
+                                                <option value="-">-</option>
+                                            </select>
+                                            <input type="number" id="chalNum2" class="w-12 bg-slate-950 border border-slate-700 text-center rounded py-1 text-emerald-400" placeholder="0">
+                                            <span class="mx-0.5">=</span>
+                                            <input type="number" id="chalAns" class="w-16 bg-slate-950 border border-amber-500/50 text-center rounded py-1 text-amber-300 font-bold" placeholder="Ans">
+                                        </div>
+                                    </div>
+                                    <button onclick="checkGarageChallenge()" class="w-full mt-2 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded-lg font-dashboard uppercase tracking-wider text-sm hover:from-amber-400 hover:to-amber-500 active:scale-95 transition">
+                                        Verify Diagnostics
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Diagnostic Feed / Feedback -->
+                            <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-900 flex flex-col justify-center min-h-[120px]">
+                                <span class="text-[10px] font-dashboard text-slate-500 uppercase tracking-widest block mb-2">Diagnostic Terminal</span>
+                                <div id="garageFeedback" class="text-sm font-mono text-slate-400">
+                                    > System standby. Load the bays to start calculating...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ⚙️ TAB 2: ODOMETER MATH WORKBENCH -->
+        <section id="tab-workbench" class="tab-content hidden space-y-6">
+            <div class="max-w-4xl mx-auto glass-panel rounded-2xl p-6 border border-slate-800">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold font-dashboard flex items-center gap-2 text-cyan-400">
+                            ⚙️ ODOMETER REGROUPING WORKBENCH
+                        </h2>
+                        <p class="text-slate-400 text-sm mt-1">Master vertical column addition and subtraction with interactive carrying and borrowing!</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="generateWorkbenchProblem('addition')" class="px-3 py-1.5 bg-sky-900/40 hover:bg-sky-900/60 text-sky-400 rounded-lg text-xs font-dashboard uppercase border border-sky-500/20">
+                            + Add Problem
+                        </button>
+                        <button onclick="generateWorkbenchProblem('subtraction')" class="px-3 py-1.5 bg-orange-900/40 hover:bg-orange-900/60 text-orange-400 rounded-lg text-xs font-dashboard uppercase border border-orange-500/20">
+                            - Sub Problem
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Guided Steps Tracker -->
+                <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-850 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-cyan-950 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                            🏁
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-400 uppercase font-dashboard block">Current Road-Trip Scenario</span>
+                            <span id="workbenchScenario" class="text-sm text-slate-200 font-semibold">Generating simulation scenario...</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-right">
+                        <span class="text-[10px] text-slate-500 font-dashboard uppercase block">Operation Type</span>
+                        <span id="workbenchOpLabel" class="text-xs font-dashboard font-bold tracking-wider text-cyan-400">ADDITION</span>
+                    </div>
+                </div>
+
+                <!-- Column-Addition Interactive Board -->
+                <div class="bg-slate-950 border border-slate-850 rounded-2xl p-6 md:p-10 flex flex-col items-center">
+                    
+                    <!-- Math Table Layout -->
+                    <div class="relative w-full max-w-sm" id="workbenchTableContainer">
+                        
+                        <!-- Columns for interactive solver -->
+                        <div class="grid grid-cols-5 gap-2 text-center text-xl md:text-2xl font-dashboard relative">
+                            
+                            <!-- Header Row: Labels -->
+                            <div class="text-[10px] text-slate-500 font-semibold self-center uppercase">Th</div>
+                            <div class="text-[10px] text-slate-500 font-semibold self-center uppercase">H</div>
+                            <div class="text-[10px] text-slate-500 font-semibold self-center uppercase">T</div>
+                            <div class="text-[10px] text-slate-500 font-semibold self-center uppercase">O</div>
+                            <div class="text-[10px] text-slate-500 font-semibold self-center uppercase"></div>
+
+                            <!-- Carry/Borrow Helper Row -->
+                            <!-- Thousands -->
+                            <div class="relative py-1">
+                                <input type="number" id="carry3" max="9" class="w-10 md:w-12 h-8 text-center text-xs bg-slate-900 border border-slate-800 rounded focus:border-cyan-500 text-yellow-400 font-dashboard font-bold" placeholder="0">
+                            </div>
+                            <!-- Hundreds -->
+                            <div class="relative py-1">
+                                <input type="number" id="carry2" max="9" class="w-10 md:w-12 h-8 text-center text-xs bg-slate-900 border border-slate-800 rounded focus:border-cyan-500 text-yellow-400 font-dashboard font-bold" placeholder="0">
+                            </div>
+                            <!-- Tens -->
+                            <div class="relative py-1">
+                                <input type="number" id="carry1" max="9" class="w-10 md:w-12 h-8 text-center text-xs bg-slate-900 border border-slate-800 rounded focus:border-cyan-500 text-yellow-400 font-dashboard font-bold" placeholder="0">
+                            </div>
+                            <!-- Ones -->
+                            <div class="relative py-1">
+                                <input type="number" id="carry0" max="9" class="w-10 md:w-12 h-8 text-center text-xs bg-slate-900 border border-slate-800 rounded focus:border-cyan-500 text-yellow-400 font-dashboard font-bold" placeholder="0">
+                            </div>
+                            <!-- Extra utility block -->
+                            <div class="text-xs text-amber-500 self-center font-bold">Regroup</div>
+
+                            <!-- Row 1: Top Number (Odometer Starting) -->
+                            <div id="row1-digit3" class="p-3 bg-slate-900/60 rounded text-slate-100 relative">4</div>
+                            <div id="row1-digit2" class="p-3 bg-slate-900/60 rounded text-slate-100 relative">8</div>
+                            <div id="row1-digit1" class="p-3 bg-slate-900/60 rounded text-slate-100 relative">6</div>
+                            <div id="row1-digit0" class="p-3 bg-slate-900/60 rounded text-slate-100 relative">3</div>
+                            <div class="text-xs text-slate-500 self-center uppercase font-dashboard">Start</div>
+
+                            <!-- Row 2: Bottom Number (Trip Distance) -->
+                            <div id="row2-digit3" class="p-3 bg-slate-900/60 rounded text-slate-100">1</div>
+                            <div id="row2-digit2" class="p-3 bg-slate-900/60 rounded text-slate-100">3</div>
+                            <div id="row2-digit1" class="p-3 bg-slate-900/60 rounded text-slate-100">5</div>
+                            <div id="row2-digit0" class="p-3 bg-slate-900/60 rounded text-slate-100">9</div>
+                            <div class="text-lg font-bold text-amber-500 self-center" id="workbenchOpSign">+</div>
+
+                            <!-- Divider line -->
+                            <div class="col-span-5 my-1 border-b-4 border-double border-slate-700"></div>
+
+                            <!-- Answer Inputs -->
+                            <div>
+                                <input type="number" id="ans3" max="9" min="0" class="w-full text-center p-3 bg-slate-900 border border-slate-800 focus:border-amber-500 text-amber-400 rounded font-dashboard font-bold" placeholder="?">
+                            </div>
+                            <div>
+                                <input type="number" id="ans2" max="9" min="0" class="w-full text-center p-3 bg-slate-900 border border-slate-800 focus:border-amber-500 text-amber-400 rounded font-dashboard font-bold" placeholder="?">
+                            </div>
+                            <div>
+                                <input type="number" id="ans1" max="9" min="0" class="w-full text-center p-3 bg-slate-900 border border-slate-800 focus:border-amber-500 text-amber-400 rounded font-dashboard font-bold" placeholder="?">
+                            </div>
+                            <div>
+                                <input type="number" id="ans0" max="9" min="0" class="w-full text-center p-3 bg-slate-900 border border-slate-800 focus:border-amber-500 text-amber-400 rounded font-dashboard font-bold" placeholder="?">
+                            </div>
+                            <div class="text-xs text-amber-400 self-center font-dashboard font-bold">Total</div>
+                        </div>
+
+                    </div>
+
+                    <!-- Guidance/Instruction Banner -->
+                    <div class="mt-8 p-4 bg-slate-900 rounded-xl border border-slate-800 w-full max-w-lg text-center">
+                        <span class="text-[10px] text-slate-500 font-dashboard uppercase tracking-widest block mb-1">Mechanic Guidance</span>
+                        <p id="workbenchHelpText" class="text-xs md:text-sm text-cyan-300 leading-relaxed">
+                            💡 Always start adding from the Ones column on the far right! If the sum is 10 or more, carry the Tens digit up to the Regroup row in the column to the left.
+                        </p>
+                    </div>
+
+                    <!-- Action/Verify Panel -->
+                    <div class="mt-6 flex gap-4 w-full max-w-sm justify-center">
+                        <button onclick="checkWorkbenchSolution()" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-sky-600 text-slate-950 font-dashboard font-bold rounded-xl uppercase tracking-wider text-sm shadow-lg shadow-cyan-500/20 hover:scale-[1.02] active:scale-95 transition-all">
+                            Verify Calculations ⚙️
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 🏁 TAB 3: SPEEDWAY MATH DUEL -->
+        <section id="tab-duel" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Race Track Visualizer -->
+                <div class="lg:col-span-8 glass-panel rounded-2xl p-6 border border-slate-800 relative flex flex-col justify-between overflow-hidden min-h-[500px]">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold font-dashboard text-amber-400 flex items-center gap-2">
+                                🏎️ MATH SPEEDWAY DUEL
+                            </h2>
+                            <div class="flex items-center gap-4 bg-slate-950/60 px-3 py-1 rounded-lg border border-slate-800">
+                                <span class="text-xs text-slate-400 font-dashboard">DISTANCE TO FINISH:</span>
+                                <span id="raceProgress" class="font-dashboard font-bold text-amber-400">100m</span>
+                            </div>
+                        </div>
+
+                        <!-- Race Track Layout -->
+                        <div class="bg-slate-950 rounded-xl border border-slate-850 p-4 relative overflow-hidden h-64 flex flex-col justify-around">
+                            <!-- Background scrolling lanes -->
+                            <div class="absolute inset-0 bg-slate-900/50 scrolling-road flex flex-col justify-around py-2 road-paused" id="raceTrack">
+                                
+                                <!-- Track Lane 1: Player (Red Car) -->
+                                <div class="relative w-full h-12 flex items-center">
+                                    <div class="absolute left-0 text-xs font-dashboard font-bold text-red-500 bg-red-950/80 px-2 py-0.5 rounded border border-red-500/20 z-10 select-none ml-2">YOU</div>
+                                    <div id="playerCar" class="absolute transition-all duration-500 ease-out flex items-center" style="left: 10%;">
+                                        <!-- Styled SVG Supercar -->
+                                        <svg class="w-16 h-8 text-red-500 filter drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" viewBox="0 0 24 12" fill="currentColor">
+                                            <path d="M2,6 L4,3 L15,3 L19,5 L22,6 L22,9 L19,10 L4,10 Z" />
+                                            <circle cx="6" cy="10" r="2" fill="#1e293b" stroke="#ef4444" stroke-width="1" />
+                                            <circle cx="16" cy="10" r="2" fill="#1e293b" stroke="#ef4444" stroke-width="1" />
+                                            <path d="M8,4 L12,4 L14,6 L8,6 Z" fill="#94a3b8" />
+                                        </svg>
+                                    </div>
+                                    <div class="absolute right-0 h-full w-2 bg-gradient-to-b from-yellow-400 to-amber-500 z-10 flex flex-col justify-between">
+                                        <div class="w-full h-1/2 bg-white"></div>
+                                        <div class="w-full h-1/2 bg-black"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Track Lane 2: Challenger (Blue Car) -->
+                                <div class="relative w-full h-12 flex items-center border-t border-slate-800/80">
+                                    <div class="absolute left-0 text-xs font-dashboard font-bold text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-500/20 z-10 select-none ml-2">RIVAL</div>
+                                    <div id="rivalCar" class="absolute transition-all duration-500 ease-out flex items-center" style="left: 15%;">
+                                        <!-- Styled SVG Sports car -->
+                                        <svg class="w-16 h-8 text-sky-500 filter drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]" viewBox="0 0 24 12" fill="currentColor">
+                                            <path d="M2,6 L4,3 L15,3 L19,5 L22,6 L22,9 L19,10 L4,10 Z" />
+                                            <circle cx="6" cy="10" r="2" fill="#1e293b" stroke="#38bdf8" stroke-width="1" />
+                                            <circle cx="16" cy="10" r="2" fill="#1e293b" stroke="#38bdf8" stroke-width="1" />
+                                            <path d="M8,4 L12,4 L14,6 L8,6 Z" fill="#94a3b8" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Gauges -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                        <!-- Speedometer -->
+                        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-center">
+                            <span class="text-[10px] text-slate-500 font-dashboard uppercase tracking-wider block">SPEED</span>
+                            <span class="font-dashboard font-black text-2xl text-emerald-400" id="statSpeed">0</span>
+                            <span class="text-[10px] text-slate-400 font-dashboard block">KM/H</span>
+                        </div>
+                        <!-- Current Gear -->
+                        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-center">
+                            <span class="text-[10px] text-slate-500 font-dashboard uppercase tracking-wider block">GEAR</span>
+                            <span class="font-dashboard font-black text-2xl text-amber-400" id="statGear">N</span>
+                            <span class="text-[10px] text-slate-400 font-dashboard block">ACTIVE</span>
+                        </div>
+                        <!-- Distance Driven -->
+                        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-center">
+                            <span class="text-[10px] text-slate-500 font-dashboard uppercase tracking-wider block">PROGRESS</span>
+                            <span class="font-dashboard font-black text-2xl text-sky-400" id="statDistance">0%</span>
+                            <span class="text-[10px] text-slate-400 font-dashboard block">STAGE</span>
+                        </div>
+                        <!-- Combo / Nitrous Bar -->
+                        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-center flex flex-col justify-between">
+                            <span class="text-[10px] text-slate-500 font-dashboard uppercase tracking-wider block">NITROUS</span>
+                            <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800/80 mt-1">
+                                <div id="nitroBar" class="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <span class="text-[9px] text-slate-400 font-dashboard uppercase block mt-1" id="nitroLabel">0x Combo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Questions & Gameplay Panel -->
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                    <div class="glass-panel rounded-2xl p-6 border border-slate-800 flex-1 flex flex-col justify-between min-h-[500px]">
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-bold font-dashboard text-amber-400">⚡ ENGINE INTAKE</h3>
+                                <span class="bg-slate-900 px-2 py-1 text-[10px] font-dashboard text-slate-400 border border-slate-800 uppercase tracking-widest rounded">Quiz</span>
+                            </div>
+
+                            <!-- Adventure Word Math Question -->
+                            <div class="p-4 bg-slate-950 rounded-xl border border-slate-850 min-h-[160px] flex flex-col justify-between">
+                                <div>
+                                    <span class="text-[10px] font-dashboard text-slate-500 uppercase tracking-widest block mb-1">Race Objective</span>
+                                    <p id="duelQuestion" class="text-sm text-slate-200 leading-relaxed font-semibold">
+                                        Loading racing simulator equations...
+                                    </p>
+                                </div>
+                                <div class="mt-4 pt-2 border-t border-slate-900 flex justify-between items-center">
+                                    <span class="text-xs text-amber-500 font-dashboard">Difficulty: 4th Grade</span>
+                                    <span class="text-xs text-slate-400 font-dashboard">Solve to gain Boost!</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Answer Input Section -->
+                        <div class="mt-6 space-y-4">
+                            <div>
+                                <label for="duelAnswerInput" class="block text-xs font-dashboard text-slate-400 uppercase mb-2">Input Speed Calibration</label>
+                                <div class="relative">
+                                    <input type="number" id="duelAnswerInput" class="w-full py-3 px-4 bg-slate-950 border-2 border-slate-800 rounded-xl font-dashboard text-xl font-bold tracking-widest text-center text-amber-400 focus:outline-none focus:border-amber-500" placeholder="ENTER NUMBER">
+                                </div>
+                            </div>
+
+                            <button onclick="submitDuelAnswer()" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-dashboard font-black rounded-xl uppercase tracking-widest text-sm shadow-lg shadow-amber-500/20 active:scale-95 transition-all">
+                                ENGAGE BOOST 🔥
+                            </button>
+                            
+                            <!-- System diagnostic line -->
+                            <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-850 text-center min-h-[48px]">
+                                <span id="duelFeedback" class="text-xs text-slate-400 font-dashboard uppercase tracking-wide">
+                                    Ready to race? Hit the accelerator!
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Dialog Modal (Replaces unsafe window alerts) -->
+    <div id="modalAlert" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+        <div class="glass-panel max-w-md w-full mx-4 rounded-2xl border border-slate-800 p-6 shadow-2xl text-center flex flex-col items-center">
+            <div id="modalIcon" class="w-16 h-16 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-3xl mb-4 border border-amber-500/30">
+                🏆
+            </div>
+            <h3 id="modalTitle" class="text-xl font-bold font-dashboard text-slate-100 mb-2 uppercase tracking-wide">Congratulation!</h3>
+            <p id="modalMessage" class="text-sm text-slate-400 leading-relaxed mb-6">You've successfully solved the problem!</p>
+            <button onclick="closeModalAlert()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold font-dashboard rounded-xl uppercase tracking-wider text-xs transition active:scale-95">
+                Continue Race
+            </button>
+        </div>
+    </div>
+
+    <!-- Web Audio Engine Sound System & Gameplay Script -->
+    <script>
+        // --- Web Audio Synthesizer ---
+        let audioContext;
+        let isMuted = false;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSynthSound(freq, type, duration, slideTo) {
+            if (isMuted) return;
+            initAudio();
+            if (!audioContext) return;
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+
+            if (slideTo) {
+                osc.frequency.exponentialRampToValueAtTime(slideTo, audioContext.currentTime + duration);
+            }
+
+            gain.gain.setValueAtTime(0.15, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start();
+            osc.stop(audioContext.currentTime + duration);
+        }
+
+        // Custom Racing Soundscapes
+        function playEngineRev() {
+            playSynthSound(100, 'sawtooth', 0.6, 600);
+        }
+
+        function playGearShift() {
+            playSynthSound(400, 'triangle', 0.1);
+            setTimeout(() => {
+                playSynthSound(300, 'sawtooth', 0.5, 500);
+            }, 100);
+        }
+
+        function playCorrectChime() {
+            playSynthSound(523.25, 'sine', 0.15); // C5
+            setTimeout(() => {
+                playSynthSound(659.25, 'sine', 0.15); // E5
+                setTimeout(() => {
+                    playSynthSound(783.99, 'sine', 0.3); // G5
+                }, 100);
+            }, 100);
+        }
+
+        function playErrorBuzzer() {
+            playSynthSound(150, 'square', 0.4, 80);
+        }
+
+        function playHonk() {
+            if (isMuted) return;
+            initAudio();
+            const now = audioContext.currentTime;
+            
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc1.type = 'triangle';
+            osc1.frequency.setValueAtTime(440, now);
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(349.23, now);
+
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc1.start();
+            osc2.start();
+            osc1.stop(now + 0.4);
+            osc2.stop(now + 0.4);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById('audioStatus').innerText = isMuted ? 'Muted' : 'Sound On';
+            document.getElementById('audioIcon').innerText = isMuted ? '🔇' : '🔊';
+            if (!isMuted) {
+                initAudio();
+                playHonk();
+            }
+        }
+
+
+        // --- App Global State ---
+        let playerScore = 0;
+        let activeTab = 'playground';
+        
+        // Modal helpers
+        function openModalAlert(title, message, icon = '🏆') {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = message;
+            document.getElementById('modalIcon').innerText = icon;
+            
+            const modal = document.getElementById('modalAlert');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModalAlert() {
+            const modal = document.getElementById('modalAlert');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Tab Switching
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.className = "tab-button flex flex-col items-center justify-center p-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-all duration-300";
+            });
+
+            const activeBtn = document.getElementById('btn-tab-' + tabId);
+            if (tabId === 'playground') {
+                activeBtn.className = "tab-button flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-300 bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-lg shadow-amber-500/10";
+            } else if (tabId === 'workbench') {
+                activeBtn.className = "tab-button flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-300 bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-lg shadow-cyan-500/10";
+            } else if (tabId === 'duel') {
+                activeBtn.className = "tab-button flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-300 bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-lg shadow-amber-500/10";
+            }
+
+            playGearShift();
+
+            // Init loaded tab routines
+            if (tabId === 'playground') {
+                renderGarage();
+            } else if (tabId === 'workbench') {
+                generateWorkbenchProblem();
+            } else if (tabId === 'duel') {
+                resetDuelGame();
+            }
+        }
+
+        function updateScore(points) {
+            playerScore += points;
+            document.getElementById('playerScore').innerText = playerScore;
+        }
+
+
+        // --- 🚦 MODULE 1: PIT STOP PLAYGROUND ---
+        let garageCars = 5; // Initial cars parked
+        const maxGarageCars = 16;
+        let activeGarageMission = null;
+
+        const garageMissions = [
+            {
+                text: "We have 8 racecars ready in our bays. Drive 5 sports cars in to join them. How many total?",
+                n1: 8, op: "+", n2: 5, ans: 13
+            },
+            {
+                text: "14 supercars are waiting in our bays. 6 of them drive onto the race track. How many remain?",
+                n1: 14, op: "-", n2: 6, ans: 8
+            },
+            {
+                text: "The mechanics roll out 4 vintage racecars, and then add 9 modern luxury cars. What is the total?",
+                n1: 4, op: "+", n2: 9, ans: 13
+            },
+            {
+                text: "There are 15 cars parked in the main pits. 7 speedsters start up and speed away. How many remain?",
+                n1: 15, op: "-", n2: 7, ans: 8
+            }
+        ];
+
+        function renderGarage() {
+            const grid = document.getElementById('garageGrid');
+            grid.innerHTML = '';
+
+            for (let i = 0; i < maxGarageCars; i++) {
+                const isOccupied = i < garageCars;
+                const spot = document.createElement('div');
+                spot.className = `aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-1 transition-all duration-300 cursor-pointer select-none ${
+                    isOccupied 
+                    ? 'border-emerald-500 bg-slate-900/80 shadow-md shadow-emerald-500/5' 
+                    : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
+                }`;
+                
+                spot.onclick = () => toggleGarageSpot(i);
+
+                if (isOccupied) {
+                    spot.innerHTML = `
+                        <!-- Formula Car Icon -->
+                        <svg class="w-full h-8 text-emerald-400 filter drop-shadow-[0_2px_4px_rgba(52,211,153,0.3)] animate-bounce" style="animation-duration: ${2 + (i % 3)}s" viewBox="0 0 24 12" fill="currentColor">
+                            <path d="M2,6 L4,3 L15,3 L19,5 L22,6 L22,9 L19,10 L4,10 Z" />
+                            <circle cx="6" cy="10" r="2.5" fill="#0f172a" stroke="#10b981" stroke-width="1.5" />
+                            <circle cx="16" cy="10" r="2.5" fill="#0f172a" stroke="#10b981" stroke-width="1.5" />
+                        </svg>
+                        <span class="text-[9px] font-dashboard text-slate-500 mt-1">${i + 1}</span>
+                    `;
+                } else {
+                    spot.innerHTML = `
+                        <div class="w-2 h-2 rounded-full bg-slate-800"></div>
+                        <span class="text-[9px] font-dashboard text-slate-600 mt-1">${i + 1}</span>
+                    `;
+                }
+                grid.appendChild(spot);
+            }
+            updateGarageFormula();
+        }
+
+        function toggleGarageSpot(index) {
+            // Interactive park/unpark click
+            if (index < garageCars) {
+                garageCars = index; // Drive out starting here
+                playSynthSound(200, 'sine', 0.2, 100);
+            } else {
+                garageCars = index + 1; // Park up to here
+                playSynthSound(100, 'sine', 0.2, 300);
+            }
+            renderGarage();
+        }
+
+        function garageAddCar() {
+            if (garageCars < maxGarageCars) {
+                garageCars++;
+                playSynthSound(120, 'sine', 0.2, 350);
+                renderGarage();
+            } else {
+                playErrorBuzzer();
+            }
+        }
+
+        function garageRemoveCar() {
+            if (garageCars > 0) {
+                garageCars--;
+                playSynthSound(250, 'sine', 0.2, 120);
+                renderGarage();
+            } else {
+                playErrorBuzzer();
+            }
+        }
+
+        function resetGarage() {
+            garageCars = 0;
+            playGearShift();
+            renderGarage();
+        }
+
+        function updateGarageFormula() {
+            const initial = garageCars;
+            document.getElementById('formulaInitial').innerText = initial;
+            
+            // Formula adjusts visually dynamically
+            const op = document.getElementById('formulaOperator').innerText;
+            const operand = parseInt(document.getElementById('formulaOperand').innerText) || 0;
+            
+            let res = initial;
+            if (op === '+') res = initial + operand;
+            else res = initial - operand;
+
+            document.getElementById('formulaResult').innerText = Math.max(0, res);
+        }
+
+        function loadNewGarageMission() {
+            // Pick random challenge
+            const idx = Math.floor(Math.random() * garageMissions.length);
+            activeGarageMission = garageMissions[idx];
+
+            document.getElementById('challengeDescription').innerText = activeGarageMission.text;
+            
+            // Populate equations input box with placeholder styling
+            document.getElementById('chalNum1').value = '';
+            document.getElementById('chalOp').value = activeGarageMission.op;
+            document.getElementById('chalNum2').value = '';
+            document.getElementById('chalAns').value = '';
+            
+            document.getElementById('garageFeedback').className = "text-sm font-mono text-slate-400";
+            document.getElementById('garageFeedback').innerText = "> New diagnostic mission loaded. Ready to calculate.";
+        }
+
+        function checkGarageChallenge() {
+            const n1 = parseInt(document.getElementById('chalNum1').value);
+            const op = document.getElementById('chalOp').value;
+            const n2 = parseInt(document.getElementById('chalNum2').value);
+            const ans = parseInt(document.getElementById('chalAns').value);
+
+            if (isNaN(n1) || isNaN(n2) || isNaN(ans)) {
+                playErrorBuzzer();
+                const feed = document.getElementById('garageFeedback');
+                feed.className = "text-sm font-mono text-rose-400";
+                feed.innerText = "❌ DIAGNOSTIC WARNING: All equation cells must be filled before launching!";
+                return;
+            }
+
+            if (n1 === activeGarageMission.n1 && op === activeGarageMission.op && n2 === activeGarageMission.n2 && ans === activeGarageMission.ans) {
+                // Correct!
+                playCorrectChime();
+                updateScore(15);
+                const feed = document.getElementById('garageFeedback');
+                feed.className = "text-sm font-mono text-emerald-400";
+                feed.innerText = `✔️ DIAGNOSTIC NOMINAL! Equation calibrated perfectly: ${n1} ${op} ${n2} = ${ans}. Awesome calibration! Try another.`;
+                
+                openModalAlert("Mission Accomplished!", `Excellent work! Your dashboard diagnostics calculated: ${n1} ${op} ${n2} = ${ans}. You earned 15 Speed Stars!`, "🏆");
+                setTimeout(loadNewGarageMission, 1000);
+            } else {
+                playErrorBuzzer();
+                const feed = document.getElementById('garageFeedback');
+                feed.className = "text-sm font-mono text-rose-400 font-bold";
+                
+                // Pedagogy feedback
+                let helpText = "❌ DIAGNOSTIC FAILED. Check your numbers and recalculate!";
+                if (ans !== activeGarageMission.ans) {
+                    helpText = `❌ CALIBRATION ERR: Let's count in the garage bays first! Have exactly ${activeGarageMission.n1} cars in, then perform the change. What is the final total?`;
+                }
+                feed.innerText = helpText;
+            }
+        }
+
+
+        // --- ⚙️ MODULE 2: ODOMETER REGROUPING WORKBENCH ---
+        let workbenchProblem = {
+            num1: 0,
+            num2: 0,
+            op: 'addition', // addition or subtraction
+            digits1: [],
+            digits2: []
+        };
+
+        const roadScenarios = {
+            addition: [
+                "Your supercar starts with X miles on the odometer. You drive Y miles during race day. What is the total odometer mileage?",
+                "An electric bus has driven X km. It completes a road trip of Y km. What is its combined track mileage?",
+                "The fleet engine factory produces X vehicles on Monday and Y on Tuesday. What is the combined total production?"
+            ],
+            subtraction: [
+                "Your fuel tank starts with X ml of nitro fuel. You burn Y ml on the first lap. How much nitro is left?",
+                "A tire service center has X race-tires in stock. They mount Y tires on speedsters. How many tires remain in storage?",
+                "The endurance track is X meters long. After driving Y meters, how many meters are left to reach the checkered flag?"
+            ]
+        };
+
+        function generateRandom4Digit() {
+            // Ensuring proper range for 4th graders (1000 - 9999) with logical regrouping
+            return Math.floor(1000 + Math.random() * 8000);
+        }
+
+        function generateWorkbenchProblem(forcedOp = null) {
+            const operation = forcedOp || (Math.random() > 0.5 ? 'addition' : 'subtraction');
+            workbenchProblem.op = operation;
+
+            let n1 = generateRandom4Digit();
+            let n2 = generateRandom4Digit();
+
+            if (operation === 'subtraction') {
+                // Keep the minuend larger than the subtrahend to avoid negatives
+                if (n1 < n2) {
+                    const temp = n1;
+                    n1 = n2;
+                    n2 = temp;
+                }
+            } else {
+                // Limit addition sum to 4-digits to stay perfectly on grid
+                while (n1 + n2 >= 10000) {
+                    n1 = Math.floor(1000 + Math.random() * 4000);
+                    n2 = Math.floor(1000 + Math.random() * 4000);
+                }
+            }
+
+            workbenchProblem.num1 = n1;
+            workbenchProblem.num2 = n2;
+
+            // Split into digit arrays (padded to 4 digits)
+            workbenchProblem.digits1 = String(n1).padStart(4, '0').split('').map(Number);
+            workbenchProblem.digits2 = String(n2).padStart(4, '0').split('').map(Number);
+
+            // Populating visual elements
+            document.getElementById('workbenchOpLabel').innerText = operation.toUpperCase();
+            document.getElementById('workbenchOpSign').innerText = operation === 'addition' ? '+' : '−';
+            
+            if (operation === 'addition') {
+                document.getElementById('workbenchOpLabel').className = "text-xs font-dashboard font-bold tracking-wider text-sky-400";
+                document.getElementById('workbenchHelpText').innerText = "💡 COLUMN ADDITION TIP: Always start adding from the Ones (O) column on the far right. If the sum is 10 or more, write the ones digit in the answer and carry '1' to the next column's Regroup box!";
+            } else {
+                document.getElementById('workbenchOpLabel').className = "text-xs font-dashboard font-bold tracking-wider text-orange-400";
+                document.getElementById('workbenchHelpText').innerText = "💡 COLUMN SUBTRACTION TIP: Start subtracting on the far right. If the top number is smaller than the bottom number, you must BORROW from the next column to the left!";
+            }
+
+            // Scenario Display
+            const templates = roadScenarios[operation];
+            const chosenTemplate = templates[Math.floor(Math.random() * templates.length)];
+            document.getElementById('workbenchScenario').innerText = chosenTemplate.replace('X', n1.toLocaleString()).replace('Y', n2.toLocaleString());
+
+            // Bind values to Row 1 and Row 2 digits
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`row1-digit${i}`).innerText = workbenchProblem.digits1[3 - i];
+                document.getElementById(`row2-digit${i}`).innerText = workbenchProblem.digits2[3 - i];
+                
+                // Clear carries and answers
+                document.getElementById(`carry${i}`).value = '';
+                document.getElementById(`ans${i}`).value = '';
+                
+                // Reset any styling
+                document.getElementById(`row1-digit${i}`).classList.remove('line-through', 'text-amber-500');
+                document.getElementById(`ans${i}`).classList.remove('border-rose-500', 'bg-rose-950/20');
+            }
+        }
+
+        function checkWorkbenchSolution() {
+            // Read inputs
+            const rawAns0 = document.getElementById('ans0').value;
+            const rawAns1 = document.getElementById('ans1').value;
+            const rawAns2 = document.getElementById('ans2').value;
+            const rawAns3 = document.getElementById('ans3').value;
+
+            if (rawAns0 === '' || rawAns1 === '' || rawAns2 === '' || rawAns3 === '') {
+                playErrorBuzzer();
+                document.getElementById('workbenchHelpText').innerText = "⚠️ STEER CLEAR! You must fill in all answer boxes first!";
+                return;
+            }
+
+            const studentAns = parseInt(`${rawAns3}${rawAns2}${rawAns1}${rawAns0}`);
+            const correctAns = workbenchProblem.op === 'addition' 
+                ? workbenchProblem.num1 + workbenchProblem.num2 
+                : workbenchProblem.num1 - workbenchProblem.num2;
+
+            if (studentAns === correctAns) {
+                // Double check carry entries for pedagogy
+                let carryCorrect = true;
+                if (workbenchProblem.op === 'addition') {
+                    // Check addition carries
+                    const c1 = parseInt(document.getElementById('carry1').value) || 0;
+                    const c2 = parseInt(document.getElementById('carry2').value) || 0;
+                    const c3 = parseInt(document.getElementById('carry3').value) || 0;
+
+                    const d0_1 = workbenchProblem.digits1[3];
+                    const d0_2 = workbenchProblem.digits2[3];
+                    const realC1 = (d0_1 + d0_2 >= 10) ? 1 : 0;
+
+                    const d1_1 = workbenchProblem.digits1[2];
+                    const d1_2 = workbenchProblem.digits2[2];
+                    const realC2 = (d1_1 + d1_2 + realC1 >= 10) ? 1 : 0;
+
+                    const d2_1 = workbenchProblem.digits1[1];
+                    const d2_2 = workbenchProblem.digits2[1];
+                    const realC3 = (d2_1 + d2_2 + realC2 >= 10) ? 1 : 0;
+
+                    if (c1 !== realC1 || c2 !== realC2 || c3 !== realC3) {
+                        carryCorrect = false;
+                    }
+                }
+
+                playCorrectChime();
+                updateScore(25);
+                
+                let modalMsg = `Fantastic! You correctly solved ${workbenchProblem.num1.toLocaleString()} ${workbenchProblem.op === 'addition' ? '+' : '-'} ${workbenchProblem.num2.toLocaleString()} = ${correctAns.toLocaleString()}!`;
+                if (workbenchProblem.op === 'addition' && !carryCorrect) {
+                    modalMsg += " Extra challenge: Try tracing the carried digits (1s) at the top next time to make regrouping super clear!";
+                }
+
+                openModalAlert(
+                    "Odometer Calibrated! 🏆", 
+                    modalMsg,
+                    "⚙️"
+                );
+
+                // Auto-generate next problem
+                setTimeout(() => {
+                    generateWorkbenchProblem(workbenchProblem.op);
+                }, 1000);
+
+            } else {
+                playErrorBuzzer();
+                document.getElementById('workbenchHelpText').className = "text-xs md:text-sm text-red-400 font-bold leading-relaxed";
+                
+                // Pedagogy: give hint on where the student went wrong
+                const actualDigits = String(correctAns).padStart(4, '0').split('').map(Number);
+                let failCol = 'Ones';
+                
+                if (parseInt(rawAns0) !== actualDigits[3]) failCol = 'Ones (O)';
+                else if (parseInt(rawAns1) !== actualDigits[2]) failCol = 'Tens (T)';
+                else if (parseInt(rawAns2) !== actualDigits[1]) failCol = 'Hundreds (H)';
+                else if (parseInt(rawAns3) !== actualDigits[0]) failCol = 'Thousands (Th)';
+
+                document.getElementById('workbenchHelpText').innerText = `❌ RE-TUNING REQUIRED! Check your calculations in the ${failCol} column. Check your carry/borrow calculations and try again!`;
+                
+                // Highlight faulty column
+                if (failCol.includes('O')) document.getElementById('ans0').classList.add('border-rose-500', 'bg-rose-950/20');
+                if (failCol.includes('T')) document.getElementById('ans1').classList.add('border-rose-500', 'bg-rose-950/20');
+                if (failCol.includes('H')) document.getElementById('ans2').classList.add('border-rose-500', 'bg-rose-950/20');
+                if (failCol.includes('Th')) document.getElementById('ans3').classList.add('border-rose-500', 'bg-rose-950/20');
+            }
+        }
+
+
+        // --- 🏁 MODULE 3: SPEEDWAY MATH DUEL ---
+        let playerPos = 10; // Left offset %
+        let rivalPos = 15;
+        let speed = 0;
+        let gear = 'N';
+        let combo = 0;
+        let activeDuelQuestion = null;
+        let countdownTimer = null;
+
+        const wordMathDuelQuestions = [
+            // 4th-grade aligned word problems
+            {
+                q: "A race car tire lasts 1,250 laps. We have raced 840 laps on it. How many laps are left before a change is needed?",
+                ans: 410, type: "subtraction"
+            },
+            {
+                q: "The Pit Crew loaded 2,450 gallons of premium fuel on Monday, and 1,850 gallons on Tuesday. What is the total volume?",
+                ans: 4300, type: "addition"
+            },
+            {
+                q: "Your formula car odometer displays 3,210 km. After a grueling endurance race, it reads 4,500 km. How many km was the race?",
+                ans: 1290, type: "subtraction"
+            },
+            {
+                q: "A racing team orders 1,480 aerodynamic body parts. On delivery day, they order 730 more. What is the total parts order?",
+                ans: 2210, type: "addition"
+            },
+            {
+                q: "The Speedway stadium has 9,800 total seats. On a rainy qualifying day, 4,250 seats are occupied. How many seats are empty?",
+                ans: 5550, type: "subtraction"
+            },
+            {
+                q: "A car battery produces 2,300 milli-amps. After adding an energy-recovery system, it gains 1,150 extra amps. What is the output?",
+                ans: 3450, type: "addition"
+            },
+            {
+                q: "Your team spent $5,600 on engine testing and $3,800 on wing-tunnel design. What was the total design budget?",
+                ans: 9400, type: "addition"
+            },
+            {
+                q: "A fuel transporter holds 8,400 liters of gasoline. It unloads 3,900 liters at the garage. How much gas remains in the truck?",
+                ans: 4500, type: "subtraction"
+            }
+        ];
+
+        function resetDuelGame() {
+            playerPos = 10;
+            rivalPos = 15;
+            speed = 0;
+            gear = 'N';
+            combo = 0;
+            updateDuelHUD();
+            
+            // Start scrolling track animations slowly
+            const track = document.getElementById('raceTrack');
+            track.classList.add('road-paused');
+
+            loadNextDuelQuestion();
+        }
+
+        function loadNextDuelQuestion() {
+            // Pick a random racing question
+            const idx = Math.floor(Math.random() * wordMathDuelQuestions.length);
+            activeDuelQuestion = wordMathDuelQuestions[idx];
+
+            document.getElementById('duelQuestion').innerText = activeDuelQuestion.q;
+            document.getElementById('duelAnswerInput').value = '';
+            document.getElementById('duelAnswerInput').focus();
+
+            // Progress tracking updates
+            document.getElementById('duelFeedback').innerText = "CALIBRATING RACING INTAKE... ANSWER TO GAIN ACCELERATION!";
+            document.getElementById('duelFeedback').className = "text-xs text-slate-400 font-dashboard uppercase tracking-wide";
+        }
+
+        function submitDuelAnswer() {
+            const studentInput = document.getElementById('duelAnswerInput').value.trim();
+            if (studentInput === '') {
+                playErrorBuzzer();
+                return;
+            }
+
+            const studentAns = parseInt(studentInput);
+            if (studentAns === activeDuelQuestion.ans) {
+                // Correct boost
+                combo++;
+                speed = Math.min(320, 100 + (combo * 40));
+                
+                // Shift gear automatically for arcade immersion
+                if (speed < 120) gear = '1';
+                else if (speed < 180) gear = '2';
+                else if (speed < 240) gear = '3';
+                else if (speed < 300) gear = '4';
+                else gear = '5';
+
+                playCorrectChime();
+                setTimeout(playEngineRev, 150);
+
+                // Advance player car
+                playerPos += 15;
+                if (playerPos > 80) playerPos = 80; // Bound near finish
+
+                // Scroll the road faster
+                const track = document.getElementById('raceTrack');
+                track.classList.remove('road-paused');
+                track.style.animationDuration = `${0.8 - (combo * 0.1)}s`;
+
+                document.getElementById('duelFeedback').innerText = `🔥 BOOST ENGAGED! +${20 * combo} KM/H. OUTSTANDING CALIBRATION!`;
+                document.getElementById('duelFeedback').className = "text-xs text-emerald-400 font-dashboard uppercase tracking-wide font-bold";
+
+                updateScore(20 + (combo * 5));
+
+                // Rival catches up slowly
+                rivalPos += 5 + Math.floor(Math.random() * 8);
+
+                updateDuelHUD();
+                checkRaceWinner();
+
+                if (playerPos < 80) {
+                    setTimeout(loadNextDuelQuestion, 1500);
+                }
+            } else {
+                // Wrong answer
+                playErrorBuzzer();
+                combo = 0;
+                speed = Math.max(0, speed - 50);
+                if (speed === 0) gear = 'N';
+
+                // Rival pulls ahead!
+                rivalPos += 12;
+
+                const track = document.getElementById('raceTrack');
+                track.style.animationDuration = "1.5s";
+
+                document.getElementById('duelFeedback').innerText = `❌ ENGINE SPIKE DETECTED! RIVAL TEAM IS PULLING AHEAD! Try again!`;
+                document.getElementById('duelFeedback').className = "text-xs text-rose-500 font-dashboard uppercase tracking-wide font-bold animate-shake";
+                
+                updateDuelHUD();
+                checkRaceWinner();
+            }
+        }
+
+        function updateDuelHUD() {
+            document.getElementById('playerCar').style.left = `${playerPos}%`;
+            document.getElementById('rivalCar').style.left = `${rivalPos}%`;
+
+            document.getElementById('statSpeed').innerText = speed;
+            document.getElementById('statGear').innerText = gear;
+            
+            const progress = Math.min(100, Math.floor((playerPos / 80) * 100));
+            document.getElementById('statDistance').innerText = `${progress}%`;
+            document.getElementById('raceProgress').innerText = `${100 - progress}m`;
+
+            // Nitrous / Combo gauge updating
+            const nitroPercent = Math.min(100, combo * 25);
+            document.getElementById('nitroBar').style.width = `${nitroPercent}%`;
+            document.getElementById('nitroLabel').innerText = `${combo}x Racing Combo`;
+        }
+
+        function checkRaceWinner() {
+            if (playerPos >= 80) {
+                // Player wins!
+                playCorrectChime();
+                setTimeout(() => playSynthSound(880, 'sine', 1), 300);
+                
+                openModalAlert(
+                    "🏁 Victory Circle! 🏆", 
+                    `Incredible driving! You passed the checkered flag ahead of the rival team, achieving a perfect racing combo of ${combo}x! You earned 100 Speed Stars.`,
+                    "🏎️"
+                );
+                
+                updateScore(100);
+                resetDuelGame();
+            } else if (rivalPos >= 80) {
+                // Rival wins
+                playErrorBuzzer();
+                openModalAlert(
+                    "❌ Rivals Finished First!", 
+                    "The competitor crossed the line first! Pull back into the pit garage, check your equations, and launch another run!",
+                    "⚙️"
+                );
+                resetDuelGame();
+            }
+        }
+
+        // Add Enter Key bindings for better flow
+        document.getElementById('duelAnswerInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                submitDuelAnswer();
+            }
+        });
+
+        // Initialize App on Window Load
+        window.onload = function () {
+            // Boot setup
+            switchTab('playground');
+            loadNewGarageMission();
+        }
+    </script>
+</body>
+</html>
